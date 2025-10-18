@@ -1,0 +1,50 @@
+# Envio Indexer Configuration
+name: diffichain-indexer
+description: Indexes DiffiChain confidential token events
+version: 1.0.0
+
+# Network configuration
+networks:
+  - id: monad-testnet
+    rpc_url: https://testnet1.monad.xyz
+    start_block: 0
+    contracts:
+      - name: CollateralManager
+        address: "" # Update after deployment
+        abi_file_path: ./abis/CollateralManager.json
+        events:
+          - Deposit
+          - Withdraw
+
+      - name: zkERC20
+        address: "" # Update after deployment
+        abi_file_path: ./abis/zkERC20.json
+        events:
+          - NoteCommitted
+          - NullifierSpent
+          - Transfer
+
+      - name: StealthAddressRegistry
+        address: "" # Update after deployment
+        abi_file_path: ./abis/StealthAddressRegistry.json
+        events:
+          - StealthAddressPublished
+          - Announcement
+
+      - name: DarkPool
+        address: "" # Update after deployment
+        abi_file_path: ./abis/DarkPool.json
+        events:
+          - OrderPlaced
+          - OrderMatched
+          - OrderCancelled
+
+# Database configuration
+database:
+  type: postgres
+  # Connection details from environment variables
+
+# Sync configuration
+sync:
+  batch_size: 1000
+  confirmations: 12

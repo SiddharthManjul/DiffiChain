@@ -1,0 +1,24 @@
+{
+  "name": "@diffichain/indexer",
+  "version": "1.0.0",
+  "description": "Envio HyperSync event indexer for DiffiChain",
+  "scripts": {
+    "codegen": "envio codegen",
+    "dev": "envio dev",
+    "start": "envio start",
+    "deploy": "envio deploy",
+    "test": "envio test",
+    "clean": "rm -rf generated .envio"
+  },
+  "keywords": [
+    "envio",
+    "indexer",
+    "hypersync",
+    "blockchain"
+  ],
+  "author": "DiffiChain Team",
+  "license": "MIT",
+  "dependencies": {
+    "envio": "^2.0.0"
+  }
+}
