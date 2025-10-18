@@ -1,0 +1,36 @@
+{
+  "name": "@diffichain/circuits",
+  "version": "1.0.0",
+  "description": "Zero-knowledge circuits for DiffiChain confidential tokens",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run build:deposit && npm run build:transfer && npm run build:withdraw",
+    "build:deposit": "bash scripts/compile.sh deposit",
+    "build:transfer": "bash scripts/compile.sh transfer",
+    "build:withdraw": "bash scripts/compile.sh withdraw",
+    "test": "npm run test:deposit && npm run test:transfer && npm run test:withdraw",
+    "test:deposit": "node test/deposit.test.js",
+    "test:transfer": "node test/transfer.test.js",
+    "test:withdraw": "node test/withdraw.test.js",
+    "setup": "bash scripts/setup.sh",
+    "setup:ptau": "bash scripts/download-ptau.sh",
+    "generate:verifiers": "bash scripts/generate-verifiers.sh",
+    "clean": "rm -rf build/*.r1cs build/*.sym build/*.wasm build/*.wtns build/*.zkey"
+  },
+  "keywords": [
+    "circom",
+    "zk-snarks",
+    "groth16",
+    "privacy"
+  ],
+  "author": "DiffiChain Team",
+  "license": "MIT",
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "snarkjs": "^0.7.3"
+  },
+  "devDependencies": {
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0"
+  }
+}
