@@ -1,0 +1,49 @@
+{
+  "name": "diffichain",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Confidential token launchpad with zero-knowledge proofs",
+  "workspaces": [
+    "contracts",
+    "circuits",
+    "frontend",
+    "indexer",
+    "shared"
+  ],
+  "scripts": {
+    "build": "npm run build:circuits && npm run build:contracts && npm run build:frontend",
+    "build:circuits": "cd circuits && npm run build",
+    "build:contracts": "cd contracts && forge build",
+    "build:frontend": "cd frontend && npm run build",
+    "test": "npm run test:contracts && npm run test:circuits",
+    "test:contracts": "cd contracts && forge test",
+    "test:circuits": "cd circuits && npm run test",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:indexer": "cd indexer && envio dev",
+    "deploy:local": "cd contracts && forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast",
+    "deploy:testnet": "cd contracts && forge script script/Deploy.s.sol --rpc-url https://testnet1.monad.xyz --broadcast --verify",
+    "setup:circuits": "cd circuits && npm run setup",
+    "clean": "npm run clean:contracts && npm run clean:circuits && npm run clean:frontend",
+    "clean:contracts": "cd contracts && forge clean",
+    "clean:circuits": "cd circuits && npm run clean",
+    "clean:frontend": "cd frontend && npm run clean"
+  },
+  "keywords": [
+    "zero-knowledge",
+    "privacy",
+    "confidential-tokens",
+    "zk-snarks",
+    "defi",
+    "monad"
+  ],
+  "author": "DiffiChain Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
