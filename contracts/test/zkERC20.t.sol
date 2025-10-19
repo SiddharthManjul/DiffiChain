@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {zkERC20} from "../src/core/zkERC20.sol";
 import {CollateralManager} from "../src/core/CollateralManager.sol";
 import {StealthAddressRegistry} from "../src/core/StealthAddressRegistry.sol";
-import {MockGroth16Verifier, MockFailingVerifier} from "./mocks/MockGroth16Verifier.sol";
+import {MockGroth16Verifier} from "./mocks/MockGroth16Verifier.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 
 contract zkERC20Test is Test {
@@ -29,8 +29,8 @@ contract zkERC20Test is Test {
         transferVerifier = new MockGroth16Verifier();
         withdrawVerifier = new MockGroth16Verifier();
 
-        // Deploy collateral manager
-        collateralManager = new CollateralManager();
+        // Deploy collateral manager (without price oracle for basic tests)
+        collateralManager = new CollateralManager(address(0));
 
         // Deploy underlying ERC20
         underlyingToken = new MockERC20("Ether", "ETH", 18);
