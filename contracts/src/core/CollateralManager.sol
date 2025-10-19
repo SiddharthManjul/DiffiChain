@@ -2,7 +2,9 @@
 pragma solidity ^0.8.24;
 
 import {ICollateralManager} from "../interfaces/ICollateralManager.sol";
+import {IPriceOracle} from "../interfaces/IPriceOracle.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -14,6 +16,9 @@ contract CollateralManager is ICollateralManager, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // ============ State Variables ============
+
+    /// @notice Price oracle for token valuations
+    IPriceOracle public priceOracle;
 
     /// @notice Mapping of zkERC20 token => underlying ERC20 token
     mapping(address => address) public underlyingTokens;
@@ -28,6 +33,7 @@ contract CollateralManager is ICollateralManager, Ownable, ReentrancyGuard {
 
     event ZkTokenRegistered(address indexed zkToken, address indexed underlyingToken);
     event ZkTokenAuthorized(address indexed zkToken, bool authorized);
+    event PriceOracleUpdated(address indexed oldOracle, address indexed newOracle);
 
     // ============ Errors ============
 
@@ -40,7 +46,13 @@ contract CollateralManager is ICollateralManager, Ownable, ReentrancyGuard {
 
     // ============ Constructor ============
 
-    constructor() Ownable(msg.sender) {}
+    /// @notice Initialize CollateralManager with optional price oracle
+    /// @param _priceOracle Address of price oracle (can be zero initially)
+    constructor(address _priceOracle) Ownable(msg.sender) {
+        if (_priceOracle != address(0)) {
+            priceOracle = IPriceOracle(_priceOracle);
+        }
+    }
 
     // ============ Admin Functions ============
 
@@ -72,6 +84,14 @@ contract CollateralManager is ICollateralManager, Ownable, ReentrancyGuard {
 
         authorizedZkTokens[zkToken] = authorized;
         emit ZkTokenAuthorized(zkToken, authorized);
+    }
+
+    /// @notice Update the price oracle
+    /// @param _priceOracle New price oracle address
+    function setPriceOracle(address _priceOracle) external onlyOwner {
+        address oldOracle = address(priceOracle);
+        priceOracle = IPriceOracle(_priceOracle);
+        emit PriceOracleUpdated(oldOracle, _priceOracle);
     }
 
     // ============ Collateral Management ============
@@ -173,5 +193,59 @@ contract CollateralManager is ICollateralManager, Ownable, ReentrancyGuard {
     /// @return authorized True if authorized
     function isAuthorized(address zkToken) external view returns (bool authorized) {
         return authorizedZkTokens[zkToken];
+    }
+
+    /// @notice Get the current price of underlying token in USD
+    /// @param zkToken The zkERC20 token address
+    /// @param decimals Desired decimal places for the price
+    /// @return priceInUsd The current price in USD with specified decimals
+    function getUnderlyingTokenPrice(address zkToken, uint8 decimals) external view returns (uint256 priceInUsd) {
+        // Check price oracle first (system-level requirement)
+        if (address(priceOracle) == address(0)) {
+            revert InvalidAddress();
+        }
+
+        address underlyingToken = underlyingTokens[zkToken];
+        if (underlyingToken == address(0)) {
+            revert ZkTokenNotRegistered();
+        }
+
+        return priceOracle.getPriceInUsd(underlyingToken, decimals);
+    }
+
+    /// @notice Get the total collateral value in USD
+    /// @param zkToken The zkERC20 token address
+    /// @param decimals Desired decimal places for the value
+    /// @return valueInUsd The total collateral value in USD
+    function getTotalCollateralValue(address zkToken, uint8 decimals) external view returns (uint256 valueInUsd) {
+        address underlyingToken = underlyingTokens[zkToken];
+        if (underlyingToken == address(0)) {
+            revert ZkTokenNotRegistered();
+        }
+        if (address(priceOracle) == address(0)) {
+            revert InvalidAddress();
+        }
+
+        uint256 collateralAmount = totalCollateral[zkToken];
+        if (collateralAmount == 0) {
+            return 0;
+        }
+
+        uint256 pricePerToken = priceOracle.getPriceInUsd(underlyingToken, decimals);
+
+        // Get the actual decimals of the underlying token
+        uint8 tokenDecimals = IERC20Metadata(underlyingToken).decimals();
+
+        // Calculate value: (collateralAmount * pricePerToken) / 10^tokenDecimals
+        // collateralAmount is in token's native decimals
+        // pricePerToken is in USD with `decimals` decimal places
+        // Result is in USD with `decimals` decimal places
+        return (collateralAmount * pricePerToken) / (10 ** tokenDecimals);
+    }
+
+    /// @notice Get the price oracle address
+    /// @return oracle The price oracle address
+    function getPriceOracle() external view returns (address oracle) {
+        return address(priceOracle);
     }
 }

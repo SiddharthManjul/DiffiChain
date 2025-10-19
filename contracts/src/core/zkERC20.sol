@@ -18,16 +18,16 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
     // ============ State Variables ============
 
     /// @notice Verifier for deposit proofs
-    IGroth16Verifier public immutable depositVerifier;
+    IGroth16Verifier public immutable DEPOSIT_VERIFIER;
 
     /// @notice Verifier for transfer proofs
-    IGroth16Verifier public immutable transferVerifier;
+    IGroth16Verifier public immutable TRANSFER_VERIFIER;
 
     /// @notice Verifier for withdrawal proofs
-    IGroth16Verifier public immutable withdrawVerifier;
+    IGroth16Verifier public immutable WITHDRAW_VERIFIER;
 
     /// @notice Collateral manager for ERC20 backing
-    ICollateralManager public immutable collateralManager;
+    ICollateralManager public immutable COLLATERAL_MANAGER;
 
     /// @notice Merkle tree storing note commitments
     MerkleTree.Tree private commitmentTree;
@@ -45,7 +45,7 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
     string public symbol;
 
     /// @notice Denomination (optional - for fixed-denomination privacy)
-    uint256 public immutable denomination;
+    uint256 public immutable DENOMINATION;
 
     // ============ Errors ============
 
@@ -78,11 +78,11 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
     ) Ownable(msg.sender) {
         name = _name;
         symbol = _symbol;
-        depositVerifier = IGroth16Verifier(_depositVerifier);
-        transferVerifier = IGroth16Verifier(_transferVerifier);
-        withdrawVerifier = IGroth16Verifier(_withdrawVerifier);
-        collateralManager = ICollateralManager(_collateralManager);
-        denomination = _denomination;
+        DEPOSIT_VERIFIER = IGroth16Verifier(_depositVerifier);
+        TRANSFER_VERIFIER = IGroth16Verifier(_transferVerifier);
+        WITHDRAW_VERIFIER = IGroth16Verifier(_withdrawVerifier);
+        COLLATERAL_MANAGER = ICollateralManager(_collateralManager);
+        DENOMINATION = _denomination;
 
         // Initialize Merkle tree
         commitmentTree.initialize();
@@ -110,27 +110,27 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
 
         // Verify ZK proof
         // Public inputs: [commitment, denomination (if fixed)]
-        uint256[] memory publicInputs = new uint256[](denomination > 0 ? 2 : 1);
+        uint256[] memory publicInputs = new uint256[](DENOMINATION > 0 ? 2 : 1);
         publicInputs[0] = uint256(commitment);
-        if (denomination > 0) {
-            publicInputs[1] = denomination;
+        if (DENOMINATION > 0) {
+            publicInputs[1] = DENOMINATION;
         }
 
-        bool proofValid = depositVerifier.verifyProof(proofA, proofB, proofC, publicInputs);
+        bool proofValid = DEPOSIT_VERIFIER.verifyProof(proofA, proofB, proofC, publicInputs);
         if (!proofValid) {
             revert InvalidProof();
         }
 
         // Lock collateral (amount is proven in ZK proof, not passed here for privacy)
         // For fixed denomination, we know the amount. For variable, it's encoded in the proof.
-        uint256 amountToLock = denomination > 0 ? denomination : _extractAmountFromProof(publicInputs);
+        uint256 amountToLock = DENOMINATION > 0 ? DENOMINATION : _extractAmountFromProof(publicInputs);
 
         // Transfer from user to this contract first, then to CollateralManager
-        address underlyingToken = collateralManager.getUnderlyingToken(address(this));
-        IERC20(underlyingToken).transferFrom(msg.sender, address(this), amountToLock);
-        IERC20(underlyingToken).approve(address(collateralManager), amountToLock);
+        address underlyingToken = COLLATERAL_MANAGER.getUnderlyingToken(address(this));
+        require(IERC20(underlyingToken).transferFrom(msg.sender, address(this), amountToLock), "Transfer failed");
+        IERC20(underlyingToken).approve(address(COLLATERAL_MANAGER), amountToLock);
 
-        bool locked = collateralManager.lockCollateral(address(this), amountToLock, commitment);
+        bool locked = COLLATERAL_MANAGER.lockCollateral(address(this), amountToLock, commitment);
         if (!locked) {
             revert TransferFailed();
         }
@@ -225,7 +225,7 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
             merkleRoot
         );
 
-        if (!transferVerifier.verifyProof(proofA, proofB, proofC, publicInputs)) {
+        if (!TRANSFER_VERIFIER.verifyProof(proofA, proofB, proofC, publicInputs)) {
             revert InvalidProof();
         }
     }
@@ -311,7 +311,7 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
         publicInputs[1] = uint256(uint160(recipient));
         publicInputs[2] = uint256(commitmentTree.root);
 
-        bool proofValid = withdrawVerifier.verifyProof(proofA, proofB, proofC, publicInputs);
+        bool proofValid = WITHDRAW_VERIFIER.verifyProof(proofA, proofB, proofC, publicInputs);
         if (!proofValid) {
             revert InvalidProof();
         }
@@ -323,9 +323,9 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
 
         // Release collateral
         // Amount is proven in ZK proof (extracted from proof or fixed denomination)
-        uint256 amountToRelease = denomination > 0 ? denomination : _extractAmountFromProof(publicInputs);
+        uint256 amountToRelease = DENOMINATION > 0 ? DENOMINATION : _extractAmountFromProof(publicInputs);
 
-        bool released = collateralManager.releaseCollateral(
+        bool released = COLLATERAL_MANAGER.releaseCollateral(
             address(this),
             recipient,
             amountToRelease,
