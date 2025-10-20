@@ -1,0 +1,342 @@
+{
+  "description": "Test vectors for transfer.circom circuit",
+  "version": "1.0.0",
+  "circuit": "transfer.circom",
+  "configuration": {
+    "NUM_INPUTS": 2,
+    "NUM_OUTPUTS": 2,
+    "MERKLE_TREE_LEVELS": 20
+  },
+  "testCases": [
+    {
+      "name": "Valid transfer - Simple payment",
+      "valid": true,
+      "description": "Transfer 0.6 ETH to recipient, 0.4 ETH change back to sender",
+      "input": {
+        "inputAmounts": ["1000000000000000000", "0"],
+        "inputSecrets": [
+          "12345678901234567890123456789012345678901234567890123456",
+          "0"
+        ],
+        "inputNullifiers": [
+          "98765432109876543210987654321098765432109876543210987654",
+          "0"
+        ],
+        "inputPathElements": [
+          ["elem0_0", "elem0_1", "elem0_2", "elem0_3", "elem0_4", "elem0_5", "elem0_6", "elem0_7", "elem0_8", "elem0_9", "elem0_10", "elem0_11", "elem0_12", "elem0_13", "elem0_14", "elem0_15", "elem0_16", "elem0_17", "elem0_18", "elem0_19"],
+          ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+        ],
+        "inputPathIndices": [
+          [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ],
+        "outputAmounts": ["600000000000000000", "400000000000000000"],
+        "outputSecrets": [
+          "11111111111111111111111111111111111111111111111111111111",
+          "22222222222222222222222222222222222222222222222222222222"
+        ],
+        "outputNullifiers": [
+          "33333333333333333333333333333333333333333333333333333333",
+          "44444444444444444444444444444444444444444444444444444444"
+        ],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890"
+      },
+      "expectedOutputs": {
+        "inputNullifierHashes": ["computed_hash_0", "computed_hash_1"],
+        "outputCommitments": ["computed_commitment_0", "computed_commitment_1"]
+      }
+    },
+    {
+      "name": "Valid transfer - Merge two notes",
+      "valid": true,
+      "description": "Merge two notes (0.5 + 0.5 = 1.0) into one output",
+      "input": {
+        "inputAmounts": ["500000000000000000", "500000000000000000"],
+        "inputSecrets": [
+          "12345678901234567890123456789012345678901234567890123456",
+          "56789012345678901234567890123456789012345678901234567890"
+        ],
+        "inputNullifiers": [
+          "98765432109876543210987654321098765432109876543210987654",
+          "54321098765432109876543210987654321098765432109876543210"
+        ],
+        "inputPathElements": [
+          ["elem0_0", "elem0_1", "elem0_2", "elem0_3", "elem0_4", "elem0_5", "elem0_6", "elem0_7", "elem0_8", "elem0_9", "elem0_10", "elem0_11", "elem0_12", "elem0_13", "elem0_14", "elem0_15", "elem0_16", "elem0_17", "elem0_18", "elem0_19"],
+          ["elem1_0", "elem1_1", "elem1_2", "elem1_3", "elem1_4", "elem1_5", "elem1_6", "elem1_7", "elem1_8", "elem1_9", "elem1_10", "elem1_11", "elem1_12", "elem1_13", "elem1_14", "elem1_15", "elem1_16", "elem1_17", "elem1_18", "elem1_19"]
+        ],
+        "inputPathIndices": [
+          [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+          [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
+        ],
+        "outputAmounts": ["1000000000000000000", "0"],
+        "outputSecrets": [
+          "11111111111111111111111111111111111111111111111111111111",
+          "0"
+        ],
+        "outputNullifiers": [
+          "33333333333333333333333333333333333333333333333333333333",
+          "55555555555555555555555555555555555555555555555555555555"
+        ],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890"
+      }
+    },
+    {
+      "name": "Valid transfer - Split one note",
+      "valid": true,
+      "description": "Split one note (1.0) into two outputs (0.3 + 0.7)",
+      "input": {
+        "inputAmounts": ["1000000000000000000", "0"],
+        "inputSecrets": [
+          "12345678901234567890123456789012345678901234567890123456",
+          "0"
+        ],
+        "inputNullifiers": [
+          "98765432109876543210987654321098765432109876543210987654",
+          "0"
+        ],
+        "inputPathElements": [
+          ["elem0_0", "elem0_1", "elem0_2", "elem0_3", "elem0_4", "elem0_5", "elem0_6", "elem0_7", "elem0_8", "elem0_9", "elem0_10", "elem0_11", "elem0_12", "elem0_13", "elem0_14", "elem0_15", "elem0_16", "elem0_17", "elem0_18", "elem0_19"],
+          ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+        ],
+        "inputPathIndices": [
+          [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ],
+        "outputAmounts": ["300000000000000000", "700000000000000000"],
+        "outputSecrets": [
+          "11111111111111111111111111111111111111111111111111111111",
+          "22222222222222222222222222222222222222222222222222222222"
+        ],
+        "outputNullifiers": [
+          "33333333333333333333333333333333333333333333333333333333",
+          "44444444444444444444444444444444444444444444444444444444"
+        ],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890"
+      }
+    },
+    {
+      "name": "Invalid transfer - Balance mismatch (inflation)",
+      "valid": false,
+      "description": "Outputs sum to more than inputs (creating tokens from nothing)",
+      "input": {
+        "inputAmounts": ["1000000000000000000", "0"],
+        "inputSecrets": [
+          "12345678901234567890123456789012345678901234567890123456",
+          "0"
+        ],
+        "inputNullifiers": [
+          "98765432109876543210987654321098765432109876543210987654",
+          "0"
+        ],
+        "inputPathElements": [
+          ["elem0_0", "elem0_1", "elem0_2", "elem0_3", "elem0_4", "elem0_5", "elem0_6", "elem0_7", "elem0_8", "elem0_9", "elem0_10", "elem0_11", "elem0_12", "elem0_13", "elem0_14", "elem0_15", "elem0_16", "elem0_17", "elem0_18", "elem0_19"],
+          ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+        ],
+        "inputPathIndices": [
+          [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ],
+        "outputAmounts": ["700000000000000000", "700000000000000000"],
+        "outputSecrets": [
+          "11111111111111111111111111111111111111111111111111111111",
+          "22222222222222222222222222222222222222222222222222222222"
+        ],
+        "outputNullifiers": [
+          "33333333333333333333333333333333333333333333333333333333",
+          "44444444444444444444444444444444444444444444444444444444"
+        ],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890"
+      },
+      "expectedError": "inputSum === outputSum constraint fails"
+    },
+    {
+      "name": "Invalid transfer - Balance mismatch (deflation)",
+      "valid": false,
+      "description": "Outputs sum to less than inputs (burning tokens)",
+      "input": {
+        "inputAmounts": ["1000000000000000000", "0"],
+        "inputSecrets": [
+          "12345678901234567890123456789012345678901234567890123456",
+          "0"
+        ],
+        "inputNullifiers": [
+          "98765432109876543210987654321098765432109876543210987654",
+          "0"
+        ],
+        "inputPathElements": [
+          ["elem0_0", "elem0_1", "elem0_2", "elem0_3", "elem0_4", "elem0_5", "elem0_6", "elem0_7", "elem0_8", "elem0_9", "elem0_10", "elem0_11", "elem0_12", "elem0_13", "elem0_14", "elem0_15", "elem0_16", "elem0_17", "elem0_18", "elem0_19"],
+          ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+        ],
+        "inputPathIndices": [
+          [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ],
+        "outputAmounts": ["300000000000000000", "300000000000000000"],
+        "outputSecrets": [
+          "11111111111111111111111111111111111111111111111111111111",
+          "22222222222222222222222222222222222222222222222222222222"
+        ],
+        "outputNullifiers": [
+          "33333333333333333333333333333333333333333333333333333333",
+          "44444444444444444444444444444444444444444444444444444444"
+        ],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890"
+      },
+      "expectedError": "inputSum === outputSum constraint fails"
+    },
+    {
+      "name": "Invalid transfer - Duplicate input nullifiers",
+      "valid": false,
+      "description": "Same nullifier used for both inputs (double-spending same note)",
+      "input": {
+        "inputAmounts": ["500000000000000000", "500000000000000000"],
+        "inputSecrets": [
+          "12345678901234567890123456789012345678901234567890123456",
+          "56789012345678901234567890123456789012345678901234567890"
+        ],
+        "inputNullifiers": [
+          "98765432109876543210987654321098765432109876543210987654",
+          "98765432109876543210987654321098765432109876543210987654"
+        ],
+        "inputPathElements": [
+          ["elem0_0", "elem0_1", "elem0_2", "elem0_3", "elem0_4", "elem0_5", "elem0_6", "elem0_7", "elem0_8", "elem0_9", "elem0_10", "elem0_11", "elem0_12", "elem0_13", "elem0_14", "elem0_15", "elem0_16", "elem0_17", "elem0_18", "elem0_19"],
+          ["elem1_0", "elem1_1", "elem1_2", "elem1_3", "elem1_4", "elem1_5", "elem1_6", "elem1_7", "elem1_8", "elem1_9", "elem1_10", "elem1_11", "elem1_12", "elem1_13", "elem1_14", "elem1_15", "elem1_16", "elem1_17", "elem1_18", "elem1_19"]
+        ],
+        "inputPathIndices": [
+          [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+          [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
+        ],
+        "outputAmounts": ["1000000000000000000", "0"],
+        "outputSecrets": [
+          "11111111111111111111111111111111111111111111111111111111",
+          "0"
+        ],
+        "outputNullifiers": [
+          "33333333333333333333333333333333333333333333333333333333",
+          "55555555555555555555555555555555555555555555555555555555"
+        ],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890"
+      },
+      "expectedError": "nullifierEquality.out === 0 constraint fails"
+    },
+    {
+      "name": "Invalid transfer - Duplicate output nullifiers",
+      "valid": false,
+      "description": "Same nullifier used for both outputs (creates identical notes)",
+      "input": {
+        "inputAmounts": ["1000000000000000000", "0"],
+        "inputSecrets": [
+          "12345678901234567890123456789012345678901234567890123456",
+          "0"
+        ],
+        "inputNullifiers": [
+          "98765432109876543210987654321098765432109876543210987654",
+          "0"
+        ],
+        "inputPathElements": [
+          ["elem0_0", "elem0_1", "elem0_2", "elem0_3", "elem0_4", "elem0_5", "elem0_6", "elem0_7", "elem0_8", "elem0_9", "elem0_10", "elem0_11", "elem0_12", "elem0_13", "elem0_14", "elem0_15", "elem0_16", "elem0_17", "elem0_18", "elem0_19"],
+          ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+        ],
+        "inputPathIndices": [
+          [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ],
+        "outputAmounts": ["600000000000000000", "400000000000000000"],
+        "outputSecrets": [
+          "11111111111111111111111111111111111111111111111111111111",
+          "22222222222222222222222222222222222222222222222222222222"
+        ],
+        "outputNullifiers": [
+          "33333333333333333333333333333333333333333333333333333333",
+          "33333333333333333333333333333333333333333333333333333333"
+        ],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890"
+      },
+      "expectedError": "outputNullifierEquality.out === 0 constraint fails"
+    },
+    {
+      "name": "Invalid transfer - Wrong Merkle proof",
+      "valid": false,
+      "description": "Merkle path doesn't lead to claimed root (note doesn't exist)",
+      "input": {
+        "inputAmounts": ["1000000000000000000", "0"],
+        "inputSecrets": [
+          "12345678901234567890123456789012345678901234567890123456",
+          "0"
+        ],
+        "inputNullifiers": [
+          "98765432109876543210987654321098765432109876543210987654",
+          "0"
+        ],
+        "inputPathElements": [
+          ["wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem"],
+          ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+        ],
+        "inputPathIndices": [
+          [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ],
+        "outputAmounts": ["600000000000000000", "400000000000000000"],
+        "outputSecrets": [
+          "11111111111111111111111111111111111111111111111111111111",
+          "22222222222222222222222222222222222222222222222222222222"
+        ],
+        "outputNullifiers": [
+          "33333333333333333333333333333333333333333333333333333333",
+          "44444444444444444444444444444444444444444444444444444444"
+        ],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890"
+      },
+      "expectedError": "merkleProofs[i].root === merkleRoot constraint fails"
+    }
+  ],
+  "notes": [
+    "Transfer allows flexible note management: merge, split, or simple transfer",
+    "Use zero amounts for unused input/output slots",
+    "Always use fresh, random nullifiers for outputs",
+    "Merkle root must be current (contract should track and verify)",
+    "All input notes must exist in the tree (proved via Merkle inclusion)",
+    "Sum of inputs must equal sum of outputs (balance conservation)",
+    "Input nullifiers must be distinct (can't use same note twice in one tx)",
+    "Output nullifiers must be distinct (can't create duplicate notes)"
+  ],
+  "securityChecks": [
+    {
+      "check": "Merkle tree inclusion",
+      "constraint": "Circuit-level proof",
+      "purpose": "Prove ownership of input notes"
+    },
+    {
+      "check": "Balance conservation",
+      "constraint": "inputSum === outputSum",
+      "purpose": "Prevent inflation/deflation attacks"
+    },
+    {
+      "check": "Input nullifier uniqueness",
+      "constraint": "Within transaction and contract-level",
+      "purpose": "Prevent double-spending"
+    },
+    {
+      "check": "Output nullifier uniqueness",
+      "constraint": "Within transaction",
+      "purpose": "Prevent duplicate note creation"
+    },
+    {
+      "check": "Amount range validation",
+      "constraint": "0 <= amount < 2^64",
+      "purpose": "Prevent overflow attacks"
+    },
+    {
+      "check": "Merkle root freshness",
+      "constraint": "Contract-level check",
+      "purpose": "Prevent replay attacks with old tree states"
+    }
+  ],
+  "exampleUsage": {
+    "javascript": {
+      "simpleTransfer": "// Send 0.6 ETH, keep 0.4 ETH change\nconst inputs = {\n  inputAmounts: ['1000000000000000000', '0'],\n  // ... other inputs\n  outputAmounts: ['600000000000000000', '400000000000000000']\n};",
+      "mergeNotes": "// Merge 0.5 + 0.5 = 1.0\nconst inputs = {\n  inputAmounts: ['500000000000000000', '500000000000000000'],\n  // ... other inputs\n  outputAmounts: ['1000000000000000000', '0']\n};",
+      "splitNote": "// Split 1.0 into 0.3 + 0.7\nconst inputs = {\n  inputAmounts: ['1000000000000000000', '0'],\n  // ... other inputs\n  outputAmounts: ['300000000000000000', '700000000000000000']\n};"
+    }
+  }
+}

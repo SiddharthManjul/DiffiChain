@@ -1,0 +1,304 @@
+{
+  "description": "Test vectors for withdraw.circom circuit",
+  "version": "1.0.0",
+  "circuit": "withdraw.circom",
+  "configuration": {
+    "MERKLE_TREE_LEVELS": 20,
+    "MAX_AMOUNT": "18446744073709551615"
+  },
+  "testCases": [
+    {
+      "name": "Valid withdrawal - 1 token",
+      "valid": true,
+      "description": "Withdraw 1 token to specified Ethereum address",
+      "input": {
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654",
+        "pathElements": [
+          "elem0", "elem1", "elem2", "elem3", "elem4",
+          "elem5", "elem6", "elem7", "elem8", "elem9",
+          "elem10", "elem11", "elem12", "elem13", "elem14",
+          "elem15", "elem16", "elem17", "elem18", "elem19"
+        ],
+        "pathIndices": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890",
+        "amount": "1000000000000000000",
+        "recipient": "742d35Cc6634C0532925a3b844Bc9e7595f0bEb5"
+      },
+      "expectedOutputs": {
+        "commitment": "computed_via_poseidon",
+        "nullifierHash": "computed_via_poseidon"
+      },
+      "notes": [
+        "Recipient address must be converted to decimal field element",
+        "In JS: BigInt('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5').toString()"
+      ]
+    },
+    {
+      "name": "Valid withdrawal - Small amount",
+      "valid": true,
+      "description": "Withdraw minimum amount (1 wei)",
+      "input": {
+        "secret": "11111111111111111111111111111111111111111111111111111111",
+        "nullifier": "22222222222222222222222222222222222222222222222222222222",
+        "pathElements": [
+          "elem0", "elem1", "elem2", "elem3", "elem4",
+          "elem5", "elem6", "elem7", "elem8", "elem9",
+          "elem10", "elem11", "elem12", "elem13", "elem14",
+          "elem15", "elem16", "elem17", "elem18", "elem19"
+        ],
+        "pathIndices": [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890",
+        "amount": "1",
+        "recipient": "1234567890123456789012345678901234567890"
+      }
+    },
+    {
+      "name": "Valid withdrawal - Large amount",
+      "valid": true,
+      "description": "Withdraw 1 million tokens",
+      "input": {
+        "secret": "33333333333333333333333333333333333333333333333333333333",
+        "nullifier": "44444444444444444444444444444444444444444444444444444444",
+        "pathElements": [
+          "elem0", "elem1", "elem2", "elem3", "elem4",
+          "elem5", "elem6", "elem7", "elem8", "elem9",
+          "elem10", "elem11", "elem12", "elem13", "elem14",
+          "elem15", "elem16", "elem17", "elem18", "elem19"
+        ],
+        "pathIndices": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890",
+        "amount": "1000000000000000000000000",
+        "recipient": "9876543210987654321098765432109876543210"
+      }
+    },
+    {
+      "name": "Valid withdrawal - Different recipient",
+      "valid": true,
+      "description": "Withdraw to a different address (privacy preserving)",
+      "input": {
+        "secret": "55555555555555555555555555555555555555555555555555555555",
+        "nullifier": "66666666666666666666666666666666666666666666666666666666",
+        "pathElements": [
+          "elem0", "elem1", "elem2", "elem3", "elem4",
+          "elem5", "elem6", "elem7", "elem8", "elem9",
+          "elem10", "elem11", "elem12", "elem13", "elem14",
+          "elem15", "elem16", "elem17", "elem18", "elem19"
+        ],
+        "pathIndices": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890",
+        "amount": "500000000000000000",
+        "recipient": "5555555555555555555555555555555555555555"
+      },
+      "notes": [
+        "Recipient doesn't need to be the original depositor",
+        "This allows withdrawal to fresh addresses for privacy"
+      ]
+    },
+    {
+      "name": "Invalid withdrawal - Zero amount",
+      "valid": false,
+      "description": "Cannot withdraw zero tokens",
+      "input": {
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654",
+        "pathElements": [
+          "elem0", "elem1", "elem2", "elem3", "elem4",
+          "elem5", "elem6", "elem7", "elem8", "elem9",
+          "elem10", "elem11", "elem12", "elem13", "elem14",
+          "elem15", "elem16", "elem17", "elem18", "elem19"
+        ],
+        "pathIndices": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890",
+        "amount": "0",
+        "recipient": "742d35Cc6634C0532925a3b844Bc9e7595f0bEb5"
+      },
+      "expectedError": "amountGreaterThanZero.out === 1 constraint fails"
+    },
+    {
+      "name": "Invalid withdrawal - Amount overflow",
+      "valid": false,
+      "description": "Amount exceeds MAX_AMOUNT (2^64 - 1)",
+      "input": {
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654",
+        "pathElements": [
+          "elem0", "elem1", "elem2", "elem3", "elem4",
+          "elem5", "elem6", "elem7", "elem8", "elem9",
+          "elem10", "elem11", "elem12", "elem13", "elem14",
+          "elem15", "elem16", "elem17", "elem18", "elem19"
+        ],
+        "pathIndices": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890",
+        "amount": "18446744073709551616",
+        "recipient": "742d35Cc6634C0532925a3b844Bc9e7595f0bEb5"
+      },
+      "expectedError": "amountLessThanMax.out === 1 constraint fails"
+    },
+    {
+      "name": "Invalid withdrawal - Invalid recipient address",
+      "valid": false,
+      "description": "Recipient exceeds 2^160 - 1 (not a valid Ethereum address)",
+      "input": {
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654",
+        "pathElements": [
+          "elem0", "elem1", "elem2", "elem3", "elem4",
+          "elem5", "elem6", "elem7", "elem8", "elem9",
+          "elem10", "elem11", "elem12", "elem13", "elem14",
+          "elem15", "elem16", "elem17", "elem18", "elem19"
+        ],
+        "pathIndices": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890",
+        "amount": "1000000000000000000",
+        "recipient": "999999999999999999999999999999999999999999999999999999999999"
+      },
+      "expectedError": "recipientInRange.out === 1 constraint fails"
+    },
+    {
+      "name": "Invalid withdrawal - Wrong Merkle proof",
+      "valid": false,
+      "description": "Merkle path doesn't lead to claimed root (note doesn't exist)",
+      "input": {
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654",
+        "pathElements": [
+          "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem",
+          "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem",
+          "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem",
+          "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem", "wrong_elem"
+        ],
+        "pathIndices": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890",
+        "amount": "1000000000000000000",
+        "recipient": "742d35Cc6634C0532925a3b844Bc9e7595f0bEb5"
+      },
+      "expectedError": "merkleProof.root === merkleRoot constraint fails"
+    },
+    {
+      "name": "Invalid withdrawal - Wrong secret",
+      "valid": false,
+      "description": "Secret doesn't match the note commitment",
+      "input": {
+        "secret": "00000000000000000000000000000000000000000000000000000000",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654",
+        "pathElements": [
+          "elem0", "elem1", "elem2", "elem3", "elem4",
+          "elem5", "elem6", "elem7", "elem8", "elem9",
+          "elem10", "elem11", "elem12", "elem13", "elem14",
+          "elem15", "elem16", "elem17", "elem18", "elem19"
+        ],
+        "pathIndices": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890",
+        "amount": "1000000000000000000",
+        "recipient": "742d35Cc6634C0532925a3b844Bc9e7595f0bEb5"
+      },
+      "expectedError": "Merkle proof fails because recomputed commitment is wrong"
+    },
+    {
+      "name": "Invalid withdrawal - Wrong amount",
+      "valid": false,
+      "description": "Claimed amount doesn't match the note's actual amount",
+      "input": {
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654",
+        "pathElements": [
+          "elem0", "elem1", "elem2", "elem3", "elem4",
+          "elem5", "elem6", "elem7", "elem8", "elem9",
+          "elem10", "elem11", "elem12", "elem13", "elem14",
+          "elem15", "elem16", "elem17", "elem18", "elem19"
+        ],
+        "pathIndices": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        "merkleRoot": "123456789012345678901234567890123456789012345678901234567890",
+        "amount": "999999999999999999",
+        "recipient": "742d35Cc6634C0532925a3b844Bc9e7595f0bEb5"
+      },
+      "expectedError": "Merkle proof fails because recomputed commitment is wrong",
+      "notes": [
+        "User must know the exact amount in their note to withdraw",
+        "Cannot claim a different amount than what was deposited"
+      ]
+    }
+  ],
+  "notes": [
+    "Amount and recipient MUST be public for withdrawal (needed for ERC-20 transfer)",
+    "Secret and nullifier remain private (prevents linking to deposit)",
+    "Merkle path remains private (hides note history)",
+    "Contract must verify nullifier hasn't been used before",
+    "Contract must transfer exact amount of ERC-20 tokens to recipient",
+    "Consider using transaction relayers to hide sender's address",
+    "For maximum privacy, withdraw to fresh stealth address"
+  ],
+  "privacyTradeoffs": [
+    {
+      "aspect": "Amount",
+      "privacy": "REVEALED",
+      "reason": "Required for ERC-20 transfer on-chain",
+      "mitigation": "Use fixed denominations or multiple small withdrawals"
+    },
+    {
+      "aspect": "Recipient",
+      "privacy": "REVEALED",
+      "reason": "Tokens must go to a specific address",
+      "mitigation": "Use stealth addresses or withdraw to exchange/mixer"
+    },
+    {
+      "aspect": "Note owner",
+      "privacy": "HIDDEN",
+      "reason": "Secret never revealed, no link to deposit",
+      "benefit": "Original depositor cannot be determined"
+    },
+    {
+      "aspect": "Transaction sender",
+      "privacy": "POTENTIALLY REVEALED",
+      "reason": "Ethereum transaction has a from address",
+      "mitigation": "Use transaction relayers or meta-transactions"
+    }
+  ],
+  "securityChecks": [
+    {
+      "check": "Amount range validation",
+      "constraint": "0 < amount < 2^64",
+      "purpose": "Prevent zero withdrawals and overflow"
+    },
+    {
+      "check": "Merkle tree inclusion",
+      "constraint": "Circuit-level proof",
+      "purpose": "Prove note exists and user knows secret"
+    },
+    {
+      "check": "Nullifier uniqueness",
+      "constraint": "Contract-level check",
+      "purpose": "Prevent double-withdrawal"
+    },
+    {
+      "check": "Recipient address validation",
+      "constraint": "recipient < 2^160",
+      "purpose": "Ensure valid Ethereum address"
+    },
+    {
+      "check": "Merkle root freshness",
+      "constraint": "Contract-level check",
+      "purpose": "Ensure note still valid (not spent elsewhere)"
+    }
+  ],
+  "addressConversion": {
+    "description": "Ethereum addresses must be converted to field elements for circuits",
+    "examples": {
+      "javascript": {
+        "hexToField": "const recipientAddress = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5';\nconst recipientField = BigInt(recipientAddress).toString();\n// Result: '664429590428601471851729840354656564076901353141'",
+        "fieldToHex": "const recipientField = '664429590428601471851729840354656564076901353141';\nconst recipientAddress = '0x' + BigInt(recipientField).toString(16).padStart(40, '0');\n// Result: '0x742d35cc6634c0532925a3b844bc9e7595f0beb5'"
+      },
+      "solidity": {
+        "validation": "function withdraw(\n    uint[2] memory a,\n    uint[2][2] memory b,\n    uint[2] memory c,\n    uint[5] memory input  // [merkleRoot, amount, recipient, commitment, nullifierHash]\n) external {\n    // Verify proof\n    require(verifier.verifyProof(a, b, c, input), 'Invalid proof');\n    \n    // Extract public signals\n    bytes32 merkleRoot = bytes32(input[0]);\n    uint256 amount = input[1];\n    address recipient = address(uint160(input[2]));\n    bytes32 commitment = bytes32(input[3]);\n    bytes32 nullifierHash = bytes32(input[4]);\n    \n    // Verify not double-spent\n    require(!nullifiers[nullifierHash], 'Already withdrawn');\n    nullifiers[nullifierHash] = true;\n    \n    // Transfer tokens\n    IERC20(underlyingToken).transfer(recipient, amount);\n}"
+      }
+    }
+  },
+  "exampleUsage": {
+    "javascript": {
+      "prepareInput": "// User wants to withdraw 1 token to address 0x742d...\nconst amount = '1000000000000000000';\nconst recipient = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5';\nconst recipientField = BigInt(recipient).toString();\n\n// Retrieve note data from local database\nconst note = await getNoteByCommitment(commitment);\nconst { secret, nullifier } = note;\n\n// Get Merkle proof\nconst { pathElements, pathIndices, root } = await getMerkleProof(commitment);\n\nconst input = {\n  secret,\n  nullifier,\n  pathElements,\n  pathIndices,\n  merkleRoot: root,\n  amount,\n  recipient: recipientField\n};",
+      "generateProof": "const { proof, publicSignals } = await snarkjs.groth16.fullProve(\n  input,\n  'build/withdraw_js/withdraw.wasm',\n  'withdraw_final.zkey'\n);",
+      "submitToContract": "// Format proof for Solidity\nconst calldata = await snarkjs.groth16.exportSolidityCallData(proof, publicSignals);\n\n// Submit transaction\nconst tx = await zkERC20Contract.withdraw(\n  proof.pi_a,\n  proof.pi_b,\n  proof.pi_c,\n  publicSignals\n);\n\nawait tx.wait();\nconsole.log('Withdrawal successful!');"
+    }
+  }
+}

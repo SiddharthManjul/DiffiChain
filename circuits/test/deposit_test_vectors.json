@@ -1,0 +1,160 @@
+{
+  "description": "Test vectors for deposit.circom circuit",
+  "version": "1.0.0",
+  "circuit": "deposit.circom",
+  "testCases": [
+    {
+      "name": "Valid deposit - 1 token (18 decimals)",
+      "valid": true,
+      "input": {
+        "amount": "1000000000000000000",
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654"
+      },
+      "expectedOutputs": {
+        "commitment": "computed_via_poseidon_hash",
+        "nullifierHash": "computed_via_poseidon_hash"
+      },
+      "description": "Standard deposit of 1 token with 18 decimal places"
+    },
+    {
+      "name": "Valid deposit - Small amount",
+      "valid": true,
+      "input": {
+        "amount": "1",
+        "secret": "11111111111111111111111111111111111111111111111111111111",
+        "nullifier": "22222222222222222222222222222222222222222222222222222222"
+      },
+      "description": "Minimum valid amount (1 wei)"
+    },
+    {
+      "name": "Valid deposit - Large amount",
+      "valid": true,
+      "input": {
+        "amount": "1000000000000000000000000",
+        "secret": "33333333333333333333333333333333333333333333333333333333",
+        "nullifier": "44444444444444444444444444444444444444444444444444444444"
+      },
+      "description": "Large amount (1 million tokens with 18 decimals)"
+    },
+    {
+      "name": "Valid deposit - Random values",
+      "valid": true,
+      "input": {
+        "amount": "750000000000000000",
+        "secret": "18273645091827364509182736450918273645091827364509182736",
+        "nullifier": "56473829104756382910475638291047563829104756382910475638"
+      },
+      "description": "Random but valid values"
+    },
+    {
+      "name": "Invalid deposit - Zero amount",
+      "valid": false,
+      "input": {
+        "amount": "0",
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654"
+      },
+      "expectedError": "Amount must be > 0",
+      "description": "Should fail: amount is zero"
+    },
+    {
+      "name": "Invalid deposit - Negative amount (underflow)",
+      "valid": false,
+      "input": {
+        "amount": "-1",
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654"
+      },
+      "expectedError": "Amount must be positive",
+      "description": "Should fail: negative amounts not allowed"
+    },
+    {
+      "name": "Invalid deposit - Overflow amount",
+      "valid": false,
+      "input": {
+        "amount": "18446744073709551616",
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654"
+      },
+      "expectedError": "Amount exceeds MAX_AMOUNT (2^64 - 1)",
+      "description": "Should fail: amount > 2^64 - 1"
+    },
+    {
+      "name": "Invalid deposit - Secret is zero",
+      "valid": true,
+      "input": {
+        "amount": "1000000000000000000",
+        "secret": "0",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654"
+      },
+      "description": "Technically valid but insecure - secret should be random",
+      "securityWarning": "Never use zero or predictable secrets in production"
+    },
+    {
+      "name": "Invalid deposit - Nullifier is zero",
+      "valid": true,
+      "input": {
+        "amount": "1000000000000000000",
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "0"
+      },
+      "description": "Technically valid but insecure - nullifier should be random",
+      "securityWarning": "Never use zero or predictable nullifiers in production"
+    },
+    {
+      "name": "Invalid deposit - Reused nullifier",
+      "valid": true,
+      "input": {
+        "amount": "1000000000000000000",
+        "secret": "12345678901234567890123456789012345678901234567890123456",
+        "nullifier": "98765432109876543210987654321098765432109876543210987654"
+      },
+      "description": "Circuit allows this, but contract should reject reused nullifiers",
+      "contractCheck": "Contract must track nullifierHashes to prevent double-spending"
+    }
+  ],
+  "notes": [
+    "All amounts are in wei (smallest unit)",
+    "Secrets and nullifiers should be cryptographically random 252-bit numbers",
+    "Never reuse secrets or nullifiers across different notes",
+    "Use secure random number generator (crypto.randomBytes, not Math.random())",
+    "Commitment = Poseidon(amount, secret, nullifier)",
+    "NullifierHash = Poseidon(nullifier)",
+    "On-chain contract must verify: commitment not exists, nullifier not used",
+    "Store secret securely - needed for spending the note later"
+  ],
+  "securityChecks": [
+    {
+      "check": "Amount range validation",
+      "constraint": "0 < amount < 2^64",
+      "purpose": "Prevent zero deposits and overflow attacks"
+    },
+    {
+      "check": "Commitment uniqueness",
+      "constraint": "Contract-level check",
+      "purpose": "Prevent duplicate notes"
+    },
+    {
+      "check": "Nullifier uniqueness",
+      "constraint": "Contract-level check",
+      "purpose": "Prevent double-spending"
+    },
+    {
+      "check": "Cryptographic randomness",
+      "constraint": "Client-level check",
+      "purpose": "Ensure unpredictable secrets and nullifiers"
+    }
+  ],
+  "exampleUsage": {
+    "javascript": {
+      "generateRandomInputs": "const crypto = require('crypto');\nconst amount = '1000000000000000000'; // 1 token\nconst secret = BigInt('0x' + crypto.randomBytes(32).toString('hex')).toString();\nconst nullifier = BigInt('0x' + crypto.randomBytes(32).toString('hex')).toString();",
+      "createWitness": "const { wasm: wasmTester } = require('circom_tester');\nconst circuit = await wasmTester('circuits/src/deposit.circom');\nconst witness = await circuit.calculateWitness({ amount, secret, nullifier });",
+      "generateProof": "const { proof, publicSignals } = await snarkjs.groth16.fullProve(\n  { amount, secret, nullifier },\n  'build/deposit_js/deposit.wasm',\n  'deposit_final.zkey'\n);",
+      "verifyProof": "const verified = await snarkjs.groth16.verify(\n  verificationKey,\n  publicSignals,\n  proof\n);"
+    },
+    "solidity": {
+      "contractCall": "function deposit(\n    uint[2] memory a,\n    uint[2][2] memory b,\n    uint[2] memory c,\n    uint[2] memory input\n) external {\n    require(verifier.verifyProof(a, b, c, input), 'Invalid proof');\n    bytes32 commitment = bytes32(input[0]);\n    bytes32 nullifierHash = bytes32(input[1]);\n    // Store commitment and nullifierHash\n}"
+    }
+  }
+}
