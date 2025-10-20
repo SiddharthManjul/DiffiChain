@@ -91,49 +91,55 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
     // ============ Deposit (Mint) ============
 
     /// @notice Deposit ERC20 tokens and mint a confidential note
+    /// @param amount Amount to deposit (revealed for collateral locking)
     /// @param commitment The commitment of the new note
+    /// @param nullifierHash Hash of the nullifier
     /// @param encryptedNote Encrypted note data for the recipient
     /// @param proofA Groth16 proof component A
     /// @param proofB Groth16 proof component B
     /// @param proofC Groth16 proof component C
     function deposit(
+        uint256 amount,
         bytes32 commitment,
+        bytes32 nullifierHash,
         bytes calldata encryptedNote,
         uint256[2] calldata proofA,
         uint256[2][2] calldata proofB,
         uint256[2] calldata proofC
-    ) external override nonReentrant {
+    ) external nonReentrant {
         // Check commitment doesn't already exist
         if (_commitmentExists(commitment)) {
             revert CommitmentAlreadyExists();
         }
 
-        // Verify ZK proof
-        // Public inputs: [commitment, denomination (if fixed)]
-        uint256[] memory publicInputs = new uint256[](DENOMINATION > 0 ? 2 : 1);
-        publicInputs[0] = uint256(commitment);
-        if (DENOMINATION > 0) {
-            publicInputs[1] = DENOMINATION;
+        // Check nullifier hasn't been used
+        if (nullifiers[nullifierHash]) {
+            revert NullifierAlreadySpent();
         }
+
+        // Verify ZK proof
+        // Circuit public outputs: [commitment, nullifierHash]
+        uint256[] memory publicInputs = new uint256[](2);
+        publicInputs[0] = uint256(commitment);
+        publicInputs[1] = uint256(nullifierHash);
 
         bool proofValid = DEPOSIT_VERIFIER.verifyProof(proofA, proofB, proofC, publicInputs);
         if (!proofValid) {
             revert InvalidProof();
         }
 
-        // Lock collateral (amount is proven in ZK proof, not passed here for privacy)
-        // For fixed denomination, we know the amount. For variable, it's encoded in the proof.
-        uint256 amountToLock = DENOMINATION > 0 ? DENOMINATION : _extractAmountFromProof(publicInputs);
-
         // Transfer from user to this contract first, then to CollateralManager
         address underlyingToken = COLLATERAL_MANAGER.getUnderlyingToken(address(this));
-        require(IERC20(underlyingToken).transferFrom(msg.sender, address(this), amountToLock), "Transfer failed");
-        IERC20(underlyingToken).approve(address(COLLATERAL_MANAGER), amountToLock);
+        require(IERC20(underlyingToken).transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        IERC20(underlyingToken).approve(address(COLLATERAL_MANAGER), amount);
 
-        bool locked = COLLATERAL_MANAGER.lockCollateral(address(this), amountToLock, commitment);
+        bool locked = COLLATERAL_MANAGER.lockCollateral(address(this), amount, commitment);
         if (!locked) {
             revert TransferFailed();
         }
+
+        // Mark nullifier as used (prevents reusing same note for multiple deposits)
+        nullifiers[nullifierHash] = true;
 
         // Insert commitment into Merkle tree
         uint256 index = commitmentTree.insert(commitment);
@@ -146,23 +152,23 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
 
     // ============ Transfer ============
 
-    /// @notice Transfer confidential tokens
-    /// @param inputNullifiers Nullifiers of input notes being spent
-    /// @param outputCommitments Commitments of new output notes
+    /// @notice Transfer confidential tokens (2-in, 2-out)
+    /// @param inputNullifiers Nullifiers of 2 input notes being spent
+    /// @param outputCommitments Commitments of 2 new output notes
     /// @param merkleRoot Merkle root proving input notes exist
-    /// @param encryptedNotes Encrypted note data for recipients
+    /// @param encryptedNotes Encrypted note data for recipients (2 notes)
     /// @param proofA Groth16 proof component A
     /// @param proofB Groth16 proof component B
     /// @param proofC Groth16 proof component C
     function transfer(
-        bytes32[] calldata inputNullifiers,
-        bytes32[] calldata outputCommitments,
+        bytes32[2] calldata inputNullifiers,
+        bytes32[2] calldata outputCommitments,
         bytes32 merkleRoot,
         bytes[] calldata encryptedNotes,
         uint256[2] calldata proofA,
         uint256[2][2] calldata proofB,
         uint256[2] calldata proofC
-    ) external override nonReentrant {
+    ) external nonReentrant {
         _validateTransferInputs(inputNullifiers, outputCommitments, encryptedNotes, merkleRoot);
 
         _verifyTransferProof(inputNullifiers, outputCommitments, merkleRoot, proofA, proofB, proofC);
@@ -172,36 +178,23 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
 
     /// @dev Validate transfer inputs
     function _validateTransferInputs(
-        bytes32[] calldata inputNullifiers,
-        bytes32[] calldata outputCommitments,
+        bytes32[2] calldata inputNullifiers,
+        bytes32[2] calldata outputCommitments,
         bytes[] calldata encryptedNotes,
         bytes32 merkleRoot
     ) private view {
-        if (inputNullifiers.length == 0 || outputCommitments.length == 0) {
-            revert InvalidArrayLength();
-        }
-        if (encryptedNotes.length != outputCommitments.length) {
+        if (encryptedNotes.length != 2) {
             revert InvalidArrayLength();
         }
 
         // Check nullifiers haven't been spent
-        for (uint256 i; i < inputNullifiers.length;) {
-            if (nullifiers[inputNullifiers[i]]) {
-                revert NullifierAlreadySpent();
-            }
-            unchecked {
-                ++i;
-            }
+        if (nullifiers[inputNullifiers[0]] || nullifiers[inputNullifiers[1]]) {
+            revert NullifierAlreadySpent();
         }
 
         // Check commitments don't exist
-        for (uint256 i; i < outputCommitments.length;) {
-            if (_commitmentExists(outputCommitments[i])) {
-                revert CommitmentAlreadyExists();
-            }
-            unchecked {
-                ++i;
-            }
+        if (_commitmentExists(outputCommitments[0]) || _commitmentExists(outputCommitments[1])) {
+            revert CommitmentAlreadyExists();
         }
 
         // Verify Merkle root is valid
@@ -212,104 +205,81 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
 
     /// @dev Verify transfer ZK proof
     function _verifyTransferProof(
-        bytes32[] calldata inputNullifiers,
-        bytes32[] calldata outputCommitments,
+        bytes32[2] calldata inputNullifiers,
+        bytes32[2] calldata outputCommitments,
         bytes32 merkleRoot,
         uint256[2] calldata proofA,
         uint256[2][2] calldata proofB,
         uint256[2] calldata proofC
     ) private view {
-        uint256[] memory publicInputs = _buildTransferPublicInputs(
-            inputNullifiers,
-            outputCommitments,
-            merkleRoot
-        );
+        // Circuit public signals: [merkleRoot, inputNullifiers[0], inputNullifiers[1],
+        //                          outputCommitments[0], outputCommitments[1]]
+        uint256[] memory publicInputs = new uint256[](5);
+        publicInputs[0] = uint256(merkleRoot);
+        publicInputs[1] = uint256(inputNullifiers[0]);
+        publicInputs[2] = uint256(inputNullifiers[1]);
+        publicInputs[3] = uint256(outputCommitments[0]);
+        publicInputs[4] = uint256(outputCommitments[1]);
 
         if (!TRANSFER_VERIFIER.verifyProof(proofA, proofB, proofC, publicInputs)) {
             revert InvalidProof();
         }
     }
 
-    /// @dev Build public inputs for transfer proof
-    function _buildTransferPublicInputs(
-        bytes32[] calldata inputNullifiers,
-        bytes32[] calldata outputCommitments,
-        bytes32 merkleRoot
-    ) private pure returns (uint256[] memory) {
-        uint256[] memory publicInputs = new uint256[](
-            inputNullifiers.length + outputCommitments.length + 1
-        );
-
-        uint256 idx;
-        for (uint256 i; i < inputNullifiers.length;) {
-            publicInputs[idx++] = uint256(inputNullifiers[i]);
-            unchecked {
-                ++i;
-            }
-        }
-        for (uint256 i; i < outputCommitments.length;) {
-            publicInputs[idx++] = uint256(outputCommitments[i]);
-            unchecked {
-                ++i;
-            }
-        }
-        publicInputs[idx] = uint256(merkleRoot);
-
-        return publicInputs;
-    }
-
     /// @dev Process transfer (mark nullifiers spent, insert commitments)
     function _processTransfer(
-        bytes32[] calldata inputNullifiers,
-        bytes32[] calldata outputCommitments,
+        bytes32[2] calldata inputNullifiers,
+        bytes32[2] calldata outputCommitments,
         bytes[] calldata encryptedNotes
     ) private {
         // Mark nullifiers as spent
-        for (uint256 i; i < inputNullifiers.length;) {
-            nullifiers[inputNullifiers[i]] = true;
-            emit NullifierSpent(inputNullifiers[i]);
-            unchecked {
-                ++i;
-            }
-        }
+        nullifiers[inputNullifiers[0]] = true;
+        nullifiers[inputNullifiers[1]] = true;
+        emit NullifierSpent(inputNullifiers[0]);
+        emit NullifierSpent(inputNullifiers[1]);
 
         // Insert new commitments
-        for (uint256 i; i < outputCommitments.length;) {
-            uint256 index = commitmentTree.insert(outputCommitments[i]);
-            commitmentIndex[outputCommitments[i]] = index;
-            emit NoteCommitted(outputCommitments[i], index, encryptedNotes[i]);
-            unchecked {
-                ++i;
-            }
-        }
+        uint256 index0 = commitmentTree.insert(outputCommitments[0]);
+        commitmentIndex[outputCommitments[0]] = index0;
+        emit NoteCommitted(outputCommitments[0], index0, encryptedNotes[0]);
+
+        uint256 index1 = commitmentTree.insert(outputCommitments[1]);
+        commitmentIndex[outputCommitments[1]] = index1;
+        emit NoteCommitted(outputCommitments[1], index1, encryptedNotes[1]);
     }
 
     // ============ Withdraw (Burn) ============
 
     /// @notice Withdraw ERC20 tokens by burning a confidential note
-    /// @param nullifier Nullifier of the note being spent
+    /// @param amount Amount to withdraw (revealed for collateral release)
     /// @param recipient Address to receive the ERC20 tokens
+    /// @param commitment Commitment of the note being spent
+    /// @param nullifierHash Hash of the nullifier
     /// @param proofA Groth16 proof component A
     /// @param proofB Groth16 proof component B
     /// @param proofC Groth16 proof component C
     function withdraw(
-        bytes32 nullifier,
+        uint256 amount,
         address recipient,
+        bytes32 commitment,
+        bytes32 nullifierHash,
         uint256[2] calldata proofA,
         uint256[2][2] calldata proofB,
         uint256[2] calldata proofC
-    ) external override nonReentrant {
+    ) external nonReentrant {
         // Check nullifier hasn't been spent
-        if (nullifiers[nullifier]) {
+        if (nullifiers[nullifierHash]) {
             revert NullifierAlreadySpent();
         }
 
         // Verify ZK proof
-        // Public inputs: [nullifier, recipient, merkleRoot]
-        uint256[] memory publicInputs = new uint256[](3);
-        publicInputs[0] = uint256(nullifier);
-        publicInputs[1] = uint256(uint160(recipient));
-        publicInputs[2] = uint256(commitmentTree.root);
+        // Circuit public signals: [merkleRoot, amount, recipient, commitment, nullifierHash]
+        uint256[] memory publicInputs = new uint256[](5);
+        publicInputs[0] = uint256(commitmentTree.root);
+        publicInputs[1] = amount;
+        publicInputs[2] = uint256(uint160(recipient));
+        publicInputs[3] = uint256(commitment);
+        publicInputs[4] = uint256(nullifierHash);
 
         bool proofValid = WITHDRAW_VERIFIER.verifyProof(proofA, proofB, proofC, publicInputs);
         if (!proofValid) {
@@ -317,19 +287,16 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
         }
 
         // Mark nullifier as spent
-        nullifiers[nullifier] = true;
-        emit NullifierSpent(nullifier);
-        emit Withdrawal(nullifier);
+        nullifiers[nullifierHash] = true;
+        emit NullifierSpent(nullifierHash);
+        emit Withdrawal(nullifierHash);
 
         // Release collateral
-        // Amount is proven in ZK proof (extracted from proof or fixed denomination)
-        uint256 amountToRelease = DENOMINATION > 0 ? DENOMINATION : _extractAmountFromProof(publicInputs);
-
         bool released = COLLATERAL_MANAGER.releaseCollateral(
             address(this),
             recipient,
-            amountToRelease,
-            nullifier
+            amount,
+            nullifierHash
         );
         if (!released) {
             revert TransferFailed();
@@ -364,19 +331,4 @@ contract zkERC20 is IzkERC20, Ownable, ReentrancyGuard {
         return commitmentTree.getNextIndex();
     }
 
-    // ============ Internal Functions ============
-
-    /// @notice Extract amount from ZK proof public inputs
-    /// @dev This is a placeholder - actual implementation depends on circuit design
-    /// @param publicInputs The public inputs array
-    /// @return amount The extracted amount
-    function _extractAmountFromProof(uint256[] memory publicInputs) private pure returns (uint256 amount) {
-        // In a real implementation, the amount would be included in public inputs
-        // or derived from the proof structure based on the circuit design
-        // For now, return a placeholder (circuits must be designed to expose this)
-        if (publicInputs.length > 1) {
-            return publicInputs[1];
-        }
-        return 0;
-    }
 }
