@@ -76,10 +76,6 @@ indexer/generated/
 private_key.txt
 secrets/
 
-# Verifier contracts (generated)
-contracts/src/verifiers/*.sol
-!contracts/src/verifiers/.gitkeep
-
 # Local Blockchain
 anvil-state.json
 
