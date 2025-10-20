@@ -1,0 +1,42 @@
+# Build outputs
+build/
+*.r1cs
+*.sym
+*_js/
+*.wasm
+*_cpp
+
+# Trusted setup keys (large files, regenerate locally)
+keys/
+*.zkey
+*.ptau
+*_verification_key.json
+
+# Dependencies
+node_modules/
+
+# Generated Solidity verifiers (optional - these go in contracts/)
+# If you want verifiers in contracts/src/, uncomment:
+# *Verifier.sol
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+witness.wtns
+proof.json
+public.json
+input.json

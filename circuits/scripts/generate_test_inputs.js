@@ -104,12 +104,13 @@ async function generateTransferInput() {
     const poseidon = await buildPoseidon();
     const tree = new SimpleMerkleTree(poseidon, 20);
 
-    // Input notes
+    // Input note 1 (real note)
     const input1Amount = "1000000000000000000"; // 1 token
     const input1Secret = randomFieldElement();
     const input1Nullifier = randomFieldElement();
 
-    const input2Amount = "500000000000000000"; // 0.5 token
+    // Input note 2 (dummy/zero note - not used)
+    const input2Amount = "0"; // 0 tokens
     const input2Secret = randomFieldElement();
     const input2Nullifier = randomFieldElement();
 
@@ -122,17 +123,17 @@ async function generateTransferInput() {
 
     // Get Merkle proofs
     const proof1 = tree.getProof(0);
-    const proof2 = tree.getProof(1);
+    const proof2 = tree.getProof(0); // Dummy note uses same tree position
 
-    // Compute Merkle root for input 1
+    // Compute Merkle root - both should compute to same root
     const merkleRoot = tree.computeRoot(commitment1Str, proof1.pathElements, proof1.pathIndices);
 
-    // Output notes (must sum to same amount: 1 + 0.5 = 1.5)
-    const output1Amount = "900000000000000000";  // 0.9 token
+    // Output notes (must sum to same amount: 1 + 0 = 1)
+    const output1Amount = "600000000000000000";  // 0.6 token
     const output1Secret = randomFieldElement();
     const output1Nullifier = randomFieldElement();
 
-    const output2Amount = "600000000000000000";  // 0.6 token (total = 1.5)
+    const output2Amount = "400000000000000000";  // 0.4 token (total = 1.0)
     const output2Secret = randomFieldElement();
     const output2Nullifier = randomFieldElement();
 
