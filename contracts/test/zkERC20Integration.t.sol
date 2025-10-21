@@ -6,7 +6,7 @@ import {console} from "forge-std/console.sol";
 import {zkERC20} from "../src/core/zkERC20.sol";
 import {CollateralManager} from "../src/core/CollateralManager.sol";
 import {MockERC20} from "../src/mocks/MockERC20.sol";
-import {IGroth16Verifier} from "../src/interfaces/IGroth16Verifier.sol";
+import {MockGroth16Verifier} from "./mocks/MockGroth16Verifier.sol";
 
 /// @title zkERC20IntegrationTest
 /// @notice Integration tests for zkERC20 with actual ZK proof verification
@@ -30,20 +30,17 @@ contract zkERC20IntegrationTest is Test {
         // Deploy mock ERC20
         underlyingToken = new MockERC20("Test Token", "TEST");
 
-        // Deploy verifiers (use address(1), address(2), address(3) as placeholders)
-        // In real tests, these would be actual deployed verifier contracts
-        depositVerifier = address(1);
-        transferVerifier = address(2);
-        withdrawVerifier = address(3);
+        // Deploy mock verifiers that always return true for testing
+        MockGroth16Verifier depositVerifierContract = new MockGroth16Verifier();
+        MockGroth16Verifier transferVerifierContract = new MockGroth16Verifier();
+        MockGroth16Verifier withdrawVerifierContract = new MockGroth16Verifier();
 
-        // Mock the verifier contracts to always return true for testing
-        // This allows us to test the integration without real proofs
-        vm.etch(depositVerifier, hex"00");
-        vm.etch(transferVerifier, hex"00");
-        vm.etch(withdrawVerifier, hex"00");
+        depositVerifier = address(depositVerifierContract);
+        transferVerifier = address(transferVerifierContract);
+        withdrawVerifier = address(withdrawVerifierContract);
 
         // Deploy CollateralManager (owner is this test contract)
-        collateralManager = new CollateralManager(address(this));
+        collateralManager = new CollateralManager(address(0));
 
         // Deploy zkERC20
         zkToken = new zkERC20(
