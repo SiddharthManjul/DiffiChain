@@ -6,7 +6,9 @@ import {zkERC20} from "../src/core/zkERC20.sol";
 import {CollateralManager} from "../src/core/CollateralManager.sol";
 import {StealthAddressRegistry} from "../src/core/StealthAddressRegistry.sol";
 import {PriceOracle} from "../src/core/PriceOracle.sol";
-import {MockGroth16Verifier} from "../test/mocks/MockGroth16Verifier.sol";
+import "../src/verifiers/DepositVerifier.sol";
+import "../src/verifiers/TransferVerifier.sol";
+import "../src/verifiers/WithdrawVerifier.sol";
 
 /// @title Deploy
 /// @notice Deployment script for DiffiChain contracts
@@ -16,11 +18,11 @@ contract Deploy is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // 1. Deploy Verifiers (using mocks for now - replace with actual snarkjs-generated verifiers)
+        // 1. Deploy Verifiers (actual snarkjs-generated Groth16 verifiers)
         console.log("Deploying verifiers...");
-        MockGroth16Verifier depositVerifier = new MockGroth16Verifier();
-        MockGroth16Verifier transferVerifier = new MockGroth16Verifier();
-        MockGroth16Verifier withdrawVerifier = new MockGroth16Verifier();
+        DepositVerifier depositVerifier = new DepositVerifier();
+        TransferVerifier transferVerifier = new TransferVerifier();
+        WithdrawVerifier withdrawVerifier = new WithdrawVerifier();
 
         console.log("Deposit Verifier:", address(depositVerifier));
         console.log("Transfer Verifier:", address(transferVerifier));
@@ -101,11 +103,11 @@ contract Deploy is Script {
         console.log("zkETH:                 ", address(zkEth));
         console.log("========================================");
         console.log("\nNext steps:");
-        console.log("1. Replace mock verifiers with actual snarkjs-generated verifiers");
-        console.log("2. Update .env with deployed contract addresses");
+        console.log("1. Update .env with deployed contract addresses");
+        console.log("2. Update frontend config with contract addresses");
         console.log("3. Update indexer config.yaml with contract addresses");
         console.log("4. Register additional zkERC20 tokens if needed");
         console.log("5. Update price feeds regularly via PriceOracle.updatePriceFeeds()");
-        console.log("6. Register additional token price feeds as needed");
+        console.log("6. Test deposit -> transfer -> withdraw flow on testnet");
     }
 }
