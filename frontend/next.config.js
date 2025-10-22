@@ -15,10 +15,19 @@ const nextConfig = {
       type: 'webassembly/async',
     });
 
-    // Externalize snarkjs on server to avoid bundling issues
+    // Externalize certain modules on server to avoid bundling issues
     if (isServer) {
       config.externals.push('snarkjs');
     }
+
+    // Fallback for Node.js modules in browser
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+      crypto: false,
+    };
 
     return config;
   },
